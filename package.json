@@ -1,0 +1,21 @@
+{
+  "name": "bitacora-viaje",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Bitácora de Viaje · plataforma multiusuario de diarios de viaje con fotografías y rutas GPX",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview --host --port 4173",
+    "dev:host": "vite --host --port 5173"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.45.4",
+    "@tmcw/togeojson": "^5.8.0",
+    "leaflet": "^1.9.4"
+  },
+  "devDependencies": {
+    "vite": "^5.4.10"
+  }
+}
