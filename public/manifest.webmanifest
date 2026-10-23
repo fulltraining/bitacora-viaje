@@ -1,0 +1,32 @@
+{
+  "name": "Bitácora de Viaje",
+  "short_name": "Bitácora",
+  "description": "Diarios de viaje con fotografías, rutas GPX y diario sonoro",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "theme_color": "#1E3B2F",
+  "background_color": "#f6f2e9",
+  "lang": "es",
+  "icons": [
+    {
+      "src": "./icons/icono-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "./icons/icono-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "./icons/icono.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
