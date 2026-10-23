@@ -200,7 +200,13 @@ arrancar().catch((error) => {
   aviso.className = "envoltorio envoltorio--estrecho seccion";
   const caja = document.createElement("div");
   caja.className = "aviso aviso--error";
-  caja.textContent = `La aplicación no ha podido arrancar: ${error.message}`;
+  caja.innerHTML = `
+    <div>
+      <strong>No se ha podido arrancar la aplicación</strong><br>
+      <span>${error.message}</span><br><br>
+      <span>Configura Supabase desde <strong>Configuración</strong> con <code>VITE_SUPABASE_URL</code> y <code>VITE_SUPABASE_ANON_KEY</code>, o añade estas variables al archivo <code>.env</code>.</span>
+    </div>
+  `;
   aviso.append(caja);
   contenido.append(aviso);
 });
