@@ -115,9 +115,64 @@ CREATE POLICY "fotografias_crud_propio" ON public.fotografias
 
 -- Buckets (crear desde el panel si falla)
 INSERT INTO storage.buckets (id, name, public)
-VALUES ('fotos', 'fotos', true)
-ON CONFLICT (id) DO NOTHING;
+VALUES ('fotos', 'fotos', false)
+ON CONFLICT (id) DO UPDATE SET public = false;
 
 INSERT INTO storage.buckets (id, name, public)
-VALUES ('gpx', 'gpx', true)
-ON CONFLICT (id) DO NOTHING;
+VALUES ('gpx', 'gpx', false)
+ON CONFLICT (id) DO UPDATE SET public = false;
+
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('audios', 'audios', false)
+ON CONFLICT (id) DO UPDATE SET public = false;
+
+-- Políticas de Storage por usuario (fotos, gpx, audios)
+ALTER TABLE storage.objects ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "fotos_crud_propietario" ON storage.objects;
+CREATE POLICY "fotos_crud_propietario"
+  ON storage.objects FOR ALL
+  USING (
+    bucket_id = 'fotos'
+    AND auth.uid() IS NOT NULL
+    AND (storage.foldername(name))[1] = 'uploads'
+    AND (storage.foldername(name))[2] = auth.uid()::text
+  )
+  WITH CHECK (
+    bucket_id = 'fotos'
+    AND auth.uid() IS NOT NULL
+    AND (storage.foldername(name))[1] = 'uploads'
+    AND (storage.foldername(name))[2] = auth.uid()::text
+  );
+
+DROP POLICY IF EXISTS "gpx_crud_propietario" ON storage.objects;
+CREATE POLICY "gpx_crud_propietario"
+  ON storage.objects FOR ALL
+  USING (
+    bucket_id = 'gpx'
+    AND auth.uid() IS NOT NULL
+    AND (storage.foldername(name))[1] = 'uploads'
+    AND (storage.foldername(name))[2] = auth.uid()::text
+  )
+  WITH CHECK (
+    bucket_id = 'gpx'
+    AND auth.uid() IS NOT NULL
+    AND (storage.foldername(name))[1] = 'uploads'
+    AND (storage.foldername(name))[2] = auth.uid()::text
+  );
+
+DROP POLICY IF EXISTS "audios_crud_propietario" ON storage.objects;
+CREATE POLICY "audios_crud_propietario"
+  ON storage.objects FOR ALL
+  USING (
+    bucket_id = 'audios'
+    AND auth.uid() IS NOT NULL
+    AND (storage.foldername(name))[1] = 'uploads'
+    AND (storage.foldername(name))[2] = auth.uid()::text
+  )
+  WITH CHECK (
+    bucket_id = 'audios'
+    AND auth.uid() IS NOT NULL
+    AND (storage.foldername(name))[1] = 'uploads'
+    AND (storage.foldername(name))[2] = auth.uid()::text
+  );

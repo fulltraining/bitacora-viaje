@@ -1,105 +1,60 @@
 # Bitácora de Viaje
 
-Plataforma multiusuario para crear y mantener diarios de viaje con fotografías, rutas GPX y diario sonoro.
-
-## Características
-
-- **Viajes y etapas** — Cada viajero organiza su viaje en etapas con fecha, lugares, diario de texto, galería de fotos y ruta GPX.
-- **Fotografías** — Subida múltiple, redimensionado automático, pies de foto, visor ampliado.
-- **Rutas GPX** — Importación con `@tmcw/togeojson`, trazado con Leaflet + OpenStreetMap, distancia, desnivel, perfil de elevación y marcadores de inicio/fin.
-- **Diario sonoro** — Grabación con `MediaRecorder`, importación de audios, categorías, ubicación opcional (GPS o marcador en el mapa), reproducción con URLs firmadas, bucket privado.
-- **Privacidad** — Autenticación con Supabase, RLS por usuario, archivos privados en Storage.
-- **Responsive** — Funciona en móvil, tablet y ordenador. Preparado para PWA.
-- **Español** — Toda la interfaz está en español.
+Plataforma multiusuario para diarios de viaje con fotografías, rutas GPX y diario sonoro.
 
 ## Tecnologías
+- Vite + HTML5/CSS3/JS modular
+- Supabase (Auth, PostgreSQL, Storage)
+- Leaflet + OpenStreetMap
+- @tmcw/togeojson
 
-- [Vite](https://vitejs.dev/) + HTML5, CSS3, JavaScript modular
-- [Supabase](https://supabase.com/) (Auth, PostgreSQL, Storage)
-- [Leaflet](https://leafletjs.com/) + [OpenStreetMap](https://www.openstreetmap.org/)
-- [@tmcw/togeojson](https://github.com/tmcw/togeojson)
+## Requisitos
+- Node.js 18+ / 20+
+- Cuenta en Supabase
 
-## Instalación
+## Variables de entorno
+Crea un archivo `.env` en la raíz (o configúralas desde la app en Ajustes/Configuración):
 
-### 1. Instalar dependencias
+```env
+VITE_SUPABASE_URL=https://TU-PROYECTO.supabase.co
+VITE_SUPABASE_ANON_KEY=TU_CLAVE_ANON_PUBLICA
+```
 
+**Notas de seguridad:**
+- Usa ÚNICAMENTE la clave `anon` (pública). **Nunca** expongas la clave `service_role` en el cliente.
+- Las claves `anon` se usan con las políticas RLS de Supabase. Debes tener RLS habilitado en todas las tablas.
+- Los buckets `fotos`, `gpx` y `audios` deben ser **privados**. El contenido privado se accede con **URLs firmadas** (no URLs públicas permanentes).
+- Las rutas de Storage siguen el patrón `uploads/{userId}/...` para que las políticas funcionen correctamente.
+
+## Configuración de Supabase
+1. En SQL Editor ejecuta `supabase/schema.sql`
+2. Ejecuta `supabase/migrations/20251021_audio_diario_sonoro.sql`
+3. En Storage crea/bloquea los buckets `fotos`, `gpx`, `audios` como **privados**
+4. Verifica las políticas RLS en Authentication/Policies y Storage
+
+## Desarrollo
 ```bash
 npm install
-```
-
-### 2. Configurar Supabase
-
-Copia `.env.example` a `.env` y completa con los datos de tu proyecto:
-
-```bash
-cp .env.example .env
-```
-
-O bien introdúcelos desde la pantalla **Configuración** de la app (se guardan en `localStorage`).
-
-### 3. Crear la base de datos y el Storage
-
-Ejecuta los scripts SQL en el **SQL Editor** de Supabase (en orden):
-
-1. `supabase/schema.sql` — Esquema base (perfiles, viajes, etapas, fotografías, RLS, buckets)
-2. `supabase/migrations/20251021_audio_diario_sonoro.sql` — Diario sonoro (tabla `audio_recordings`, bucket `audios` privado, RLS)
-
-Crea los buckets desde **Storage → Buckets**:
-
-- `fotos` — público o con las políticas del script
-- `gpx` — con las políticas del script
-- `audios` — **PRIVADO** (obligatorio). Tamaño máximo recomendado: 25 MB. Tipos permitidos: `audio/*`
-
-### 4. Ejecutar en desarrollo
-
-```bash
 npm run dev
 ```
 
-Abre `http://localhost:5173`.
-
-### 5. Construir para producción
-
+## Compilación
 ```bash
 npm run build
 npm run preview
 ```
 
-Los archivos se generan en `dist/`.
+## Despliegue en GitHub Pages
+El repositorio incluye workflows en `.github/workflows/`:
+- `ci.yml` - Instala dependencias, compila (`npm run build`) y valida `dist/`
+- `deploy-pages.yml` - Instala, compila, valida que `dist/` exista y despliega solo `dist/` con `actions/deploy-pages` manteniendo `base: "./"` en Vite.
 
-## Diario sonoro — Notas importantes
+Para desplegar: Settings > Pages > Source: GitHub Actions. Cada push a `main` compilará y desplegará.
 
-- **HTTPS obligatorio en producción** — La API `navigator.mediaDevices.getUserMedia()` solo funciona en contextos seguros (HTTPS) o `localhost`. En Termux con HTTP local funciona para pruebas, pero en un servidor público **debe** servirse por HTTPS.
-- **Permiso del micrófono** — Solo se solicita cuando el usuario pulsa **Grabar audio**. Nunca al cargar la página.
-- **Formato compatible** — La app detecta el `MIME type` soportado por el navegador (`audio/webm;codecs=opus`, `audio/ogg;codecs=opus`, `audio/mp4` en iOS, etc.).
-- **Privacidad** — Las grabaciones son **privadas por defecto**. Se guardan en un bucket **privado** de Supabase Storage. La reproducción usa **URLs firmadas** con caducidad. El campo `compartido` está preparado para una futura función, **sin activar**.
-- **Ubicación opcional** — Se puede añadir la ubicación actual (con permiso explícito) o colocar un marcador sobre el mapa GPX.
-- **Sin transcripción** — No se implementa transcripción automática en esta fase; queda prevista para el futuro.
-- **Liberación del micrófono** — Se detiene y libera siempre al terminar, cancelar o salir de la vista.
-- **Validaciones** — Se valida tipo, tamaño (máx. 25 MB) y duración (máx. 15 minutos). Se muestra progreso de subida.
-
-## Diseño
-
-- Estilo editorial de revista de viajes
-- Colores: fondo blanco roto `#f6f2e9`, verde oscuro `#1e3b2f`, arena `#e3d2b8`, terracota `#b75d38`
-- Tipografías: Fraunces (títulos) e Inter (texto), autoalojadas
-- Menú inferior en móvil
-- Preparado para PWA
-
-## Estructura
-
-```
-bitacora-viaje/
-├── index.html
-├── package.json
-├── vite.config.js
-├── public/        # iconos, manifest, fuentes
-├── src/
-│   ├── lib/       # config, supabase, audio, mapa, gpx...
-│   ├── store/     # sesiones, viajes, etapas, fotos, audio
-│   ├── views/     # pantallas + panel de audio
-│   └── styles/    # CSS modular
-└── supabase/
-    ├── schema.sql
-    └── migrations/
-```
+## Funcionalidades críticas
+- Autenticación (registro/inicio/cierre)
+- Viajes y etapas (crear/editar/eliminar)
+- Fotografías (subida/galería)
+- GPX (importación con DOMParser, preservación de altitud, perfil de elevación)
+- Diario sonoro (grabación, importación, categorías sin duplicados, ubicación opcional, reproducción con URLs firmadas, eliminación)
+- Mapas con Leaflet/OpenStreetMap

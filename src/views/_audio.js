@@ -890,12 +890,6 @@ function crearCampoCategoria(valor = "nota") {
     entrada.append(opcion);
   }
 
-  for (const categoria of CATEGORIAS_AUDIO) {
-    const opcion = crear("option", { value: categoria.valor, text: `${categoria.icono} ${categoria.etiqueta}` });
-    if (categoria.valor === valor) opcion.selected = true;
-    entrada.append(opcion);
-  }
-
   const contenedor = crear("div", { class: "campo" });
   contenedor.append(
     crear("label", { class: "campo__etiqueta", text: "Categoría", attrs: { for: id } }),

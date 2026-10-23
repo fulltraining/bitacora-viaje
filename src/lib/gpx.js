@@ -8,15 +8,26 @@ import { metricas, limites, coordenadasValidas } from "./geo.js";
 
 /**
  * Analiza el contenido de un archivo GPX.
- * @param {string|ArrayBuffer} contenido
+ * @param {string|ArrayBuffer|Document} contenido
  * @returns {object} datos del recorrido
  * @throws {Error} con mensaje en español si el archivo no es válido
  */
 export function analizarGpx(contenido) {
-  const texto =
-    typeof contenido === "string"
-      ? contenido
-      : new TextDecoder("utf-8").decode(contenido);
+  let texto = "";
+  if (typeof contenido === "string") {
+    texto = contenido;
+  } else if (contenido instanceof ArrayBuffer) {
+    texto = new TextDecoder("utf-8").decode(contenido);
+  } else if (typeof contenido === "object" && contenido !== null) {
+    // Si ya es un Document/Element, serializamos
+    try {
+      if (contenido.nodeType) {
+        texto = new XMLSerializer().serializeToString(contenido);
+      }
+    } catch {
+      texto = "";
+    }
+  }
 
   if (!texto || !texto.trim()) {
     throw new Error("El archivo GPX está vacío.");
@@ -25,9 +36,27 @@ export function analizarGpx(contenido) {
     throw new Error("El archivo no es un GPX válido (falta el elemento <gpx>).");
   }
 
+  let doc = null;
+  if (typeof DOMParser !== "undefined") {
+    try {
+      const parser = new DOMParser();
+      doc = parser.parseFromString(texto, "text/xml");
+      const parserError = doc.querySelector("parsererror");
+      if (parserError) {
+        throw new Error("Error de parseo XML");
+      }
+    } catch (error) {
+      throw new Error("El archivo GPX no es XML válido o está mal formado.");
+    }
+  }
+
   let coleccion;
   try {
-    coleccion = gpx(texto);
+    if (doc) {
+      coleccion = gpx(doc);
+    } else {
+      coleccion = gpx(texto);
+    }
   } catch (error) {
     throw new Error(`No se ha podido interpretar el GPX: ${error.message}`);
   }
@@ -127,7 +156,12 @@ function aGeojson(segmentos) {
         properties: { orden: i + 1 },
         geometry: {
           type: "LineString",
-          coordinates: s.map((p) => [p.lon, p.lat]),
+          coordinates: s.map((p) => {
+            if (Number.isFinite(p.alt)) {
+              return [p.lon, p.lat, p.alt];
+            }
+            return [p.lon, p.lat];
+          }),
         },
       })),
   };
@@ -200,15 +234,15 @@ export function perfilDesdeGeojson(geojson) {
   for (const feature of geojson?.features ?? []) {
     const coords = feature.geometry?.coordinates ?? [];
     for (const c of coords) {
-      const lat = Number(c[1]);
       const lon = Number(c[0]);
+      const lat = Number(c[1]);
       if (!coordenadasValidas(lat, lon)) continue;
       const alt = Number(c[2]);
       puntos.push({ lat, lon, alt: Number.isFinite(alt) ? alt : null });
     }
   }
 
-  if (!puntos.some((p) => p.alt !== null)) return [];
+  if (!puntos.some((p) => p.alt !== null && p.alt !== undefined)) return [];
 
   return perfilElevacion(puntos);
 }
